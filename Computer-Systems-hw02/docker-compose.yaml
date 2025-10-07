@@ -1,0 +1,37 @@
+# docker-compose.yaml
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: hw02
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 567234
+    ports:
+      - "5432:5432"    # опційно для доступу з хоста (pgAdmin тощо)
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d hw02"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Передамо URL у застосунок через змінну середовища
+      DATABASE_URL: postgresql+psycopg2://postgres:567234@db:5432/hw02
+      PORT: "8000"
+    ports:
+      - "8000:8000"
+    # Опційно: гаряче оновлення коду з хоста
+    volumes:
+      - ./:/app
+
+volumes:
+  db_data:
